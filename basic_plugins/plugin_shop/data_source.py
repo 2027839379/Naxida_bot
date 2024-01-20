@@ -18,7 +18,10 @@ path = DATA_PATH / "plugin_shop"
 if not path.exists():
     path.mkdir(parents=True, exist_ok=True)
 
-repo_json_url = "https://github.com/2027839379/ranran/archive/refs/heads/main.zip"
+# 主链接
+repo_json_url = "https://archive.fgit.cf/2027839379/ranran/archive/refs/heads/main.zip"          
+# 备用链接   
+secondary_repo_json_url = "https://github.com/2027839379/ranran/archive/refs/heads/main.zip"
 
 #这个是下载软件的路径，可以不需要
 repo_zip_path = TEMP_PATH / "plugin_repo_json.zip"
@@ -185,6 +188,25 @@ async def download_json() -> int:
             ).rename(plugin_json)
             shutil.rmtree(extract_path.absolute(), ignore_errors=True)
             return 200
+        else:
+            logger.error("第一次下载失败，尝试备用链接...")
+            secondary_url = (await AsyncHttpx.get(secondary_repo_json_url)).headers.get("Location")
+            if await AsyncHttpx.download_file(secondary_url, repo_zip_path):
+                zf = zipfile.ZipFile(repo_zip_path, "r")
+                extract_path = path / "temp"
+                for file in zf.namelist():
+                    zf.extract(file, extract_path)
+                zf.close()
+                if plugin_json.exists():
+                    plugin_json.unlink()
+                (
+                    extract_path
+                    / "ranran-main"
+                    / "chajian.json"
+                ).rename(plugin_json)
+                shutil.rmtree(extract_path.absolute(), ignore_errors=True)
+                return 201  # 表示成功使用了备用链接    
+               
     except Exception as e:
         logger.error(f"下载插件库压缩包失败或解压失败", e=e)
     return 999

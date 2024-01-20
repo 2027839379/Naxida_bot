@@ -62,8 +62,11 @@ async def _(bot: Bot, event: MessageEvent):
     code = await download_json()
     if code == 200:
         await update_repo.finish("更新插件仓库信息成功！")
-    await update_repo.send("暂时无法在线更新！")
-    logger.info("更新插件仓库信息", "更新插件仓库信息", event.user_id)
+    elif code == 201:
+        pass
+    else:
+        await update_repo.send("暂时无法在线更新！")
+        logger.info("更新插件仓库信息", "更新插件仓库信息", event.user_id)
 
 
 @show_repo.handle()
